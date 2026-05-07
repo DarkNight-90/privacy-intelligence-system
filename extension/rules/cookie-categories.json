@@ -1,0 +1,84 @@
+{
+  "version": 1,
+  "categories": [
+    {
+      "id": "essential",
+      "name": "Essential Cookies",
+      "description": "Necessary for the website to function properly",
+      "required": true,
+      "retention_days": 90,
+      "examples": [
+        "session_id",
+        "csrf_token",
+        "user_preferences"
+      ]
+    },
+    {
+      "id": "analytics",
+      "name": "Analytics Cookies",
+      "description": "Used to understand website usage and performance",
+      "required": false,
+      "retention_days": 365,
+      "examples": [
+        "_ga",
+        "_gid",
+        "amplitude_id",
+        "_hjid"
+      ]
+    },
+    {
+      "id": "marketing",
+      "name": "Marketing Cookies",
+      "description": "Used for targeted advertising and retargeting",
+      "required": false,
+      "retention_days": 540,
+      "examples": [
+        "_fbp",
+        "IDE",
+        "li_fat_id",
+        "twtr_pixel_seq"
+      ]
+    },
+    {
+      "id": "functional",
+      "name": "Functional Cookies",
+      "description": "Enable personalized features and functionality",
+      "required": false,
+      "retention_days": 180,
+      "examples": [
+        "user_language",
+        "theme_preference",
+        "cart_items"
+      ]
+    },
+    {
+      "id": "third_party",
+      "name": "Third-Party Cookies",
+      "description": "Set by domains other than the current website",
+      "required": false,
+      "retention_days": 365,
+      "examples": [
+        "doubleclick cookies",
+        "facebook cookies",
+        "linkedin cookies"
+      ]
+    }
+  ],
+  "cookie_consent_requirements": {
+    "eu_gdpr": {
+      "requires_consent": true,
+      "exempt_categories": ["essential"],
+      "description": "GDPR requires explicit consent for non-essential cookies"
+    },
+    "ccpa": {
+      "requires_consent": false,
+      "requires_disclosure": true,
+      "description": "CCPA requires disclosure and opt-out rights"
+    },
+    "uk_gdpr": {
+      "requires_consent": true,
+      "exempt_categories": ["essential"],
+      "description": "UK GDPR similar to EU GDPR"
+    }
+  }
+}
