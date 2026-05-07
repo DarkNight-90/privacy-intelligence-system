@@ -55,27 +55,57 @@ async function initialize() {
 initialize();
 
 /**
- * On page load complete: do NOT re-replay trackers that are already persisted.
- * Trackers are written by the webRequest listener in real time via Persistence.updateDomain().
- * This listener only resets per-tab badge data.
+ * On page load start: reset per-tab badge counts.
+ * Persistence layer captures tracker events in real-time.
  */
 chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
-  if (changeInfo.status === 'complete' && tab.url) {
-    // Tab finished loading — no extra writes needed; persistence layer has
-    // already captured all tracker events via the webRequest listener.
-    // Just ensure tabData entry exists for badge tracking.
-    const domain = extractDomain(tab.url);
-    if (!tabData.has(tabId)) {
-      tabData.set(tabId, { blockedCount: 0, trackers: [], domain });
-    }
+  if (changeInfo.status === 'loading') {
+    // Page is loading — reset tab data for new page context
+    const domain = extractDomain(changeInfo.url || tab.url || '');
+    tabData.set(tabId, {
+      blockedCount: 0,
+      trackers: [],
+      domain
+    });
+    updateBadge(tabId, 0);
   }
 });
 
 // ─── Tracker Detection Logic ─────────────────────────────────────────────────
 
 /**
+ * MV3 Tracker Detection Architecture:
+ *
+ * In Manifest V3, chrome.webRequest is NOT available to extensions.
+ * Instead, we use a hybrid approach:
+ *
+ * 1. Declarative Net Request (DNR):
+ *    - Defines rules in extension/rules/dnr_rules.json
+ *    - Browser blocks matching requests with zero extension overhead
+ *    - No feedback to extension about what was blocked
+ *
+ * 2. Content Script Detection:
+ *    - extension/content.js monitors actual network requests via fetch/XHR
+ *    - extension/scripts/fingerprint-guard.js detects API-based fingerprinting
+ *    - Both report detected trackers to background via chrome.runtime.sendMessage()
+ *    - Message handler routes to saveTrackerToInventory() for persistence
+ *
+ * 3. Optional Backend Verification:
+ *    - Dashboard can submit URLs to Flask backend for policy analysis
+ *    - Backend returns risk classification and red flags
+ *
+ * Result: Tracker inventory is built from content script reports + fingerprinting
+ * detections, not from direct request interception (which MV3 prohibits).
+ */
+
+/**
  * Given a URL, determine if it matches any known tracker pattern.
  * Returns { isTracker: bool, category: string, reason: string }
+ *
+ * Used by:
+ * - Message handlers (GET_ALL_INVENTORY, etc.)
+ * - Optional future DNR rule generators
+ * - For reference/validation purposes
  */
 function detectTracker(url) {
   if (!trackerRules) return { isTracker: false };
@@ -149,21 +179,13 @@ chrome.webNavigation.onCommitted.addListener((details) => {
   } else {
     tabData.set(details.tabId, { blockedCount: 0, trackers: [], domain });
   }
+  console.debug(`[PrivacyManager] Domain committed: ${domain} on tab ${details.tabId}`);
 });
 
 /**
  * Reset counts when navigating to a new page
  */
-chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
-  if (changeInfo.status === 'loading' && changeInfo.url) {
-    tabData.set(tabId, {
-      blockedCount: 0,
-      trackers: [],
-      domain: extractDomain(changeInfo.url)
-    });
-    updateBadge(tabId, 0);
-  }
-});
+// Consolidated into single onUpdated listener above
 
 /**
  * Clean up when tab is closed
