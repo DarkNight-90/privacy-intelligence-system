@@ -1,0 +1,36 @@
+{
+  "name": "personal-data-privacy-manager",
+  "version": "1.0.0",
+  "description": "Browser extension for personal data privacy management",
+  "main": "src/index.js",
+  "scripts": {
+    "build": "node scripts/build.js",
+    "build:webpack": "webpack --mode=production",
+    "dev": "echo 'Load unpacked from Chrome: chrome://extensions -> Developer mode -> Load unpacked'",
+    "lint": "eslint extension/**/*.js src/**/*.js",
+    "package": "zip -r privacy-manager.zip manifest.json extension/ --exclude '*.DS_Store'"
+  },
+  "dependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "recharts": "^2.7.2"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.22.0",
+    "@babel/preset-env": "^7.22.0",
+    "@babel/preset-react": "^7.22.0",
+    "@types/chrome": "^0.0.237",
+    "babel-loader": "^9.1.0",
+    "eslint": "^8.0.0",
+    "webpack": "^5.88.0",
+    "webpack-cli": "^5.1.0"
+  },
+  "keywords": [
+    "privacy",
+    "gdpr",
+    "tracker-blocking",
+    "browser-extension",
+    "cookie-management"
+  ],
+  "license": "MIT"
+}

@@ -1,0 +1,137 @@
+{
+  "version": "1.0.0",
+  "updated": "2024-01-01",
+  "categories": {
+    "analytics": {
+      "description": "Analytics and tracking scripts",
+      "domains": [
+        "google-analytics.com",
+        "googletagmanager.com",
+        "googletagservices.com",
+        "analytics.google.com",
+        "hotjar.com",
+        "mixpanel.com",
+        "segment.com",
+        "amplitude.com",
+        "heap.io",
+        "fullstory.com",
+        "logrocket.com",
+        "clarity.ms",
+        "mouseflow.com",
+        "crazyegg.com",
+        "kissmetrics.com",
+        "woopra.com",
+        "clicky.com",
+        "statcounter.com",
+        "chartbeat.com",
+        "parsely.com"
+      ],
+      "scripts": [
+        "gtag.js",
+        "analytics.js",
+        "ga.js",
+        "utm.js",
+        "hotjar.io",
+        "mixpanel.min.js",
+        "analytics.min.js",
+        "heap.js"
+      ]
+    },
+    "advertising": {
+      "description": "Advertising and retargeting networks",
+      "domains": [
+        "doubleclick.net",
+        "googlesyndication.com",
+        "googleadservices.com",
+        "facebook.com/tr",
+        "connect.facebook.net",
+        "ads.twitter.com",
+        "static.ads-twitter.com",
+        "pixel.advertising.com",
+        "adnxs.com",
+        "amazon-adsystem.com",
+        "criteo.com",
+        "criteo.net",
+        "taboola.com",
+        "outbrain.com",
+        "media.net",
+        "pubmatic.com",
+        "openx.net",
+        "rubiconproject.com",
+        "appnexus.com",
+        "bidswitch.net",
+        "casalemedia.com",
+        "mathtag.com",
+        "advertising.com",
+        "liveramp.com",
+        "quantserve.com",
+        "scorecardresearch.com",
+        "comscore.com",
+        "bluekai.com",
+        "turn.com",
+        "demdex.net"
+      ],
+      "scripts": [
+        "fbevents.js",
+        "fbq.js",
+        "twq.js",
+        "bing.com/bat.js"
+      ]
+    },
+    "social": {
+      "description": "Social media tracking widgets",
+      "domains": [
+        "platform.twitter.com",
+        "platform.linkedin.com",
+        "assets.pinterest.com",
+        "snap.licdn.com",
+        "static.addtoany.com",
+        "sharethis.com",
+        "addthis.com"
+      ]
+    },
+    "fingerprinting": {
+      "description": "Known fingerprinting libraries",
+      "domains": [
+        "fingerprintjs.com",
+        "fingerprint.com",
+        "iovation.com",
+        "threatmetrix.com",
+        "maxmind.com"
+      ],
+      "scripts": [
+        "fingerprint.js",
+        "fp.js",
+        "fingerprint2.js",
+        "fingerprintjs2.js"
+      ]
+    }
+  },
+  "tracking_pixels": {
+    "description": "1x1 transparent tracking pixel patterns",
+    "patterns": [
+      "pixel.gif",
+      "pixel.png",
+      "1x1.gif",
+      "track.gif",
+      "beacon.gif",
+      "pixel?",
+      "track?",
+      "collect?",
+      "t.gif",
+      "p.gif",
+      "open.php",
+      "wt.php"
+    ]
+  },
+  "whitelist": {
+    "description": "Always-allowed essential domains",
+    "domains": [
+      "cdn.jsdelivr.net",
+      "cdnjs.cloudflare.com",
+      "ajax.googleapis.com",
+      "fonts.googleapis.com",
+      "fonts.gstatic.com"
+    ]
+  }
+}

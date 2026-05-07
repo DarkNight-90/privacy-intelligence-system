@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Privacy Manager Dashboard</title>
+    <link rel="stylesheet" href="dashboard.css" />
+  </head>
+  <body>
+    <div class="dashboard-container">
+      <header class="dashboard-header">
+        <div>
+          <h1>Privacy Manager Dashboard</h1>
+          <p>Track your privacy posture, cookies, trackers, fingerprinting alerts, and GDPR actions.</p>
+        </div>
+        <div style="display: flex; gap: 10px;">
+          <button id="run-scan-button" class="primary-button">Run Scan</button>
+          <button id="clear-history-button" class="secondary-button">Clear History</button>
+        </div>
+      </header>
+
+      <section class="dashboard-stats">
+        <article class="stat-card">
+          <div class="stat-icon">👁️</div>
+          <div>
+            <p class="stat-label">Trackers</p>
+            <h2 id="stat-trackers">0</h2>
+          </div>
+        </article>
+
+        <article class="stat-card">
+          <div class="stat-icon">🍪</div>
+          <div>
+            <p class="stat-label">Cookies</p>
+            <h2 id="stat-cookies">0</h2>
+          </div>
+        </article>
+
+        <article class="stat-card">
+          <div class="stat-icon">⚠️</div>
+          <div>
+            <p class="stat-label">Fingerprint Alerts</p>
+            <h2 id="stat-fingerprint">0</h2>
+          </div>
+        </article>
+
+        <article class="stat-card">
+          <div class="stat-icon">🛡️</div>
+          <div>
+            <p class="stat-label">Privacy Score</p>
+            <h2 id="stat-score">0</h2>
+          </div>
+        </article>
+      </section>
+
+      <nav class="dashboard-tabs">
+        <button class="tab-button active" data-tab="overview">Overview</button>
+        <button class="tab-button" data-tab="trackers">Trackers</button>
+        <button class="tab-button" data-tab="cookies">Cookies</button>
+        <button class="tab-button" data-tab="timeline">Timeline</button>
+        <button class="tab-button" data-tab="gdpr">GDPR</button>
+      </nav>
+
+      <main class="dashboard-content">
+        <section class="dashboard-panel" id="panel-overview">
+          <div class="panel-grid">
+            <article class="panel-card">
+              <h3>Tracker Distribution</h3>
+              <div class="pie-chart" id="tracker-pie"></div>
+              <ul class="legend-list" id="tracker-legend"></ul>
+            </article>
+
+            <article class="panel-card">
+              <h3>Cookie Breakdown</h3>
+              <div id="cookie-bars" class="bar-chart"></div>
+            </article>
+          </div>
+        </section>
+
+        <section class="dashboard-panel hidden" id="panel-trackers">
+          <div class="panel-card full-width">
+            <h3>Trackers Detected</h3>
+            <p class="panel-text">Detected tracker activity across the current browsing session.</p>
+            <ul id="tracker-list" class="item-list"></ul>
+          </div>
+        </section>
+
+        <section class="dashboard-panel hidden" id="panel-cookies">
+          <div class="panel-card full-width">
+            <h3>Cookie Categories</h3>
+            <p class="panel-text">Cookie classification based on your current tab.</p>
+            <ul id="cookie-list" class="item-list"></ul>
+          </div>
+        </section>
+
+        <section class="dashboard-panel hidden" id="panel-timeline">
+          <div class="panel-card full-width">
+            <h3>Tracker Activity Timeline</h3>
+            <div id="timeline-chart" class="timeline-chart"></div>
+          </div>
+        </section>
+
+        <section class="dashboard-panel hidden" id="panel-gdpr">
+          <div class="panel-card full-width">
+            <h3>GDPR Assistant</h3>
+            <div class="gdpr-actions">
+              <button class="secondary-button">Generate Access Request</button>
+              <button class="secondary-button">Delete My Data</button>
+              <button class="secondary-button">Export My Data</button>
+            </div>
+            <p class="panel-text">Create GDPR templates and manage personal data requests from one place.</p>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <script src="dashboard.js"></script>
+  </body>
+</html>
