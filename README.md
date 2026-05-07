@@ -225,7 +225,305 @@ These are exposed through the `GET_PERSISTENCE_METRICS` message handler and rend
 
 ---
 
-## 📁 Folder Structure
+## � Background Service Worker Architecture (MV3)
+
+The background service worker (`extension/background.js`) is the core coordination hub for all extension activities. It runs in the service worker context, which means it can be terminated and restarted by the browser at any time.
+
+### Lifecycle & State Management
+
+```
+┌─ Startup ──────────────────────┐
+│ 1. initialize()               │
+│    • Load tracker rules JSON   │
+│    • Load whitelist storage    │
+│    • Call Persistence.init()   │
+│    • Print "initialized"       │
+└────────────────────────────────┘
+             ↓
+┌─ Event Loop ─────────────────────────────────┐
+│ • webNavigation.onCommitted                   │
+│   → Update tabData domain on new page         │
+│                                               │
+│ • tabs.onUpdated (loading)                    │
+│   → Reset blockedCount, trackers, badge      │
+│                                               │
+│ • tabs.onRemoved                              │
+│   → Clean up tabData entry                    │
+│                                               │
+│ • runtime.onMessage (from content scripts)   │
+│   → Handle GET_TAB_DATA, FINGERPRINT_ALERT   │
+│   → Delegate to Persistence.updateDomain()   │
+│                                               │
+│ • runtime.onSuspend                           │
+│   → Call Persistence.flushNow()              │
+│   → Prevent data loss on termination         │
+└────────────────────────────────────────────────┘
+```
+
+### Message Types Handled
+
+| Message | Source | Action |
+|---------|--------|--------|
+| `GET_TAB_DATA` | Popup | Returns current tab's blockedCount, trackers, domain |
+| `GET_ALL_STATS` | Dashboard | Returns global totalBlocked and tabCount |
+| `ADD_TO_WHITELIST` / `REMOVE_FROM_WHITELIST` | Dashboard | Modifies whitelist Set, saves to storage |
+| `GET_WHITELIST` | Dashboard | Returns current whitelist |
+| `CONTENT_FINGERPRINT_ALERT` | fingerprint-guard.js | Records fingerprinting attempt, increments badge |
+| `GET_SETTINGS` / `SAVE_SETTINGS` | Dashboard | Read/write user settings via chrome.storage |
+| `GET_ALL_INVENTORY` | Dashboard | Aggregates all `inventory_*` records, computes statistics |
+| `CLEAN_NON_ESSENTIAL_COOKIES` | Dashboard | Filters and removes cookies by category |
+| `CLEAR_INVENTORY` | Dashboard | Calls `Persistence.clear()` to wipe all data |
+| `GET_PERSISTENCE_METRICS` | Dashboard | Returns live metrics (flush count, latency, repair count) |
+| `GET_EXPORT_SNAPSHOT` | Dashboard | Returns JSON export via `Persistence.exportSnapshot()` |
+| `GET_DOMAIN_INVENTORY` | Dashboard | Returns specific domain's record |
+
+### Tracker Detection in MV3
+
+The extension uses a **hybrid tracking approach** because MV3 prohibits direct request interception via `chrome.webRequest`:
+
+1. **Declarative Net Request (DNR)**: Browser-native rule engine blocks trackers with zero overhead
+   - Rules defined in `extension/rules/dnr_rules.json`
+   - No feedback to extension about blocked requests
+   - Fastest path for high-volume tracker blocking
+
+2. **Content Script Reporting**: Scripts report detected trackers to the background worker
+   - `content.js` monitors actual fetch/XHR calls
+   - `fingerprint-guard.js` detects canvas/WebGL/navigator API abuse
+   - Both send messages to `runtime.onMessage` handler
+   - Handler routes to `saveTrackerToInventory()` for persistence
+
+3. **Message-Driven Inventory**: Tracker inventory built from content script signals
+   - No lost data — all reports are persisted via batched writes
+   - No race conditions — Persistence layer deduplicates + validates
+   - Real-time badge updates reflect detected activity
+
+### Badge Management
+
+```javascript
+updateBadge(tabId, count) {
+  count = 0        → badge hidden
+  count 1-10       → badge text in orange (#FF9500)
+  count > 10       → badge text in red (#FF3B30)
+}
+```
+
+The badge is updated in real-time as:
+- Content scripts detect tracker activity
+- Fingerprinting guards trigger
+- Cookie inventory changes
+
+---
+
+## 💾 Storage Engine Deep Dive
+
+The persistence engine (`extension/storage/persistence.js`) is the single source of truth for all inventory writes. It solves the classic problem of N-concurrent-writes by implementing an in-memory cache with debounced batch flushes.
+
+### Data Flow
+
+```
+Content script or message handler
+    ↓ Persistence.updateDomain(siteDomain, trackerDomain, category)
+    ↓ (synchronous, zero I/O)
+In-memory cache merge + dedup
+    ↓ Mark domain as "dirty"
+    ↓ Schedule flush (200 ms debounce)
+Debounce timer fires
+    ↓ _flush() builds validated payload
+    ↓ ONE atomic chrome.storage.local.set(payload)
+    ↓ ONE onChanged event → ONE dashboard re-render
+    ↓ _recordFlushSuccess() updates metrics
+```
+
+### Schema & Validation
+
+**Canonical v2 Record Format:**
+```javascript
+{
+  _v:          2,                    // Record schema version
+  domain:      "example.com",        // Primary key (also stored as inventory_example.com)
+  trackers: {
+    analytics:       ["ga.com", ...],
+    advertising:     ["doubleclick.net", ...],
+    fingerprinting:  ["..."],
+  },
+  lastSeen:    1715074800000,        // Timestamp of last tracker event (null if never seen)
+  firstSeen:   1715074700000,        // Timestamp of first event (new in v2)
+  hitCount:    42,                   // Total tracker events recorded (new in v2)
+}
+```
+
+**Validation Checklist** (`_validateRecord()`):
+- ✓ Type check: must be a non-array object
+- ✓ `domain` field: string, fallback to key suffix
+- ✓ `trackers` map: each category key normalized (`ads` → `advertising`)
+- ✓ Category arrays: deduplicated, duplicates removed, capped at 500 entries
+- ✓ Timestamps: valid numbers or null, estimated if missing
+- ✓ `hitCount`: estimated from array lengths for v1 records
+- ✓ Schema version: stamped with `_v: 2`
+
+**Auto-Repair Guarantee**: Corrupted records are never discarded. They are repaired in-place and written back atomically. Repair count tracked in metrics.
+
+### Version Migration
+
+When `init()` runs, it checks the `pm_schema_version` key in storage:
+
+```javascript
+if (storedVersion !== SCHEMA_VERSION) {
+  // Auto-migrate all records from v1 to v2
+  // - Add firstSeen (estimate from lastSeen)
+  // - Add hitCount (estimate from tracker array lengths)
+  // - Normalize category keys
+  // - Write back atomically with new version stamp
+}
+```
+
+### Forced Flush on Worker Termination
+
+MV3 service workers can be terminated at any time. To prevent data loss:
+
+```javascript
+chrome.runtime.onSuspend.addListener(() => {
+  Persistence.flushNow();  // Bypass 200ms debounce, write immediately
+});
+```
+
+Chrome provides ~1–2 seconds before hard-kill. Typical flush completes in <50 ms.
+
+### Metrics Exposed to Dashboard
+
+```javascript
+GET_PERSISTENCE_METRICS response: {
+  flushCount:       18,     // Successful batched writes
+  failedFlushes:    0,      // Retried writes after failure
+  avgWriteMs:       22,     // Average latency per flush
+  maxQueueSize:     7,      // Peak dirty set observed
+  repairedRecords:  2,      // Auto-repaired corrupted records
+  currentDirtySize: 0,      // Records pending next flush
+  cacheSize:        42,     // In-memory cached domains
+  lastFlushAt:      1715..., // Timestamp of last success
+  lastError:        null,   // Most recent error (if any)
+}
+```
+
+---
+
+## ⚙️ Manifest V3 Configuration
+
+The `manifest.json` defines the extension's capabilities, permissions, and security constraints under Chrome's Manifest V3 framework.
+
+### Permissions Justification
+
+| Permission | Purpose | Justification |
+|---|---|---|
+| `tabs` | Read active tab info | Required to extract domain and URL for tracker detection |
+| `cookies` | Read/delete cookies | Required for cookie inspection and cleaning feature |
+| `storage` | chrome.storage.local | Required to persist tracker inventory and settings |
+| `declarativeNetRequest` | Network rule engine | Required to define and enable blocking rules in DNR |
+| `scripting` | Dynamic script injection | Reserved for future dynamic content script deployment |
+| `webNavigation` | Track page transitions | Required to detect when user navigates to new page |
+| `notifications` | Desktop notifications | Optional high-risk tracker alerts to user |
+| `activeTab` | Current tab access | Required for popup to interact with current tab |
+
+### host_permissions
+
+```json
+"host_permissions": ["<all_urls>"]
+```
+
+Required because the extension operates on all websites. This is the broadest host permission, justified by:
+- Need to detect trackers on every website
+- Need to read cookies on every domain
+- User explicitly consents to privacy monitoring
+
+### Background Service Worker
+
+```json
+"background": {
+  "service_worker": "extension/background.js",
+  "type": "module"
+}
+```
+
+- `"type": "module"` enables ES module imports (required for `import Persistence`)
+- Service worker runs in a separate context, isolated from web pages
+- Browser terminates and restarts as needed (typically after 5 minutes idle)
+
+### Content Scripts
+
+```json
+"content_scripts": [
+  {
+    "matches": ["<all_urls>"],
+    "js": ["extension/scripts/fingerprint-guard.js", "extension/content.js"],
+    "run_at": "document_start",
+    "all_frames": true
+  }
+]
+```
+
+- `"run_at": "document_start"` ensures scripts run **before** page scripts (required to intercept APIs)
+- `"all_frames": true` injects into all iframes (trackers hide in iframes)
+- Injected into every page automatically by the browser
+
+### Declarative Net Request (DNR)
+
+```json
+"declarative_net_request": {
+  "rule_resources": [
+    {
+      "id": "tracker_rules",
+      "enabled": true,
+      "path": "extension/rules/dnr_rules.json"
+    }
+  ]
+}
+```
+
+- Defines a rule resource that references `extension/rules/dnr_rules.json`
+- Rules define which requests to block by domain/path patterns
+- `"enabled": true` means rules are active on load
+- Browser enforces rules with zero extension overhead
+
+**DNR Rule Limits** (Chrome enforces):
+- Max 30,000 rules per extension
+- Max 100 dynamic rule updates per 1-minute window
+
+### Web-Accessible Resources
+
+```json
+"web_accessible_resources": [
+  {
+    "resources": [
+      "extension/dashboard/dashboard.html",
+      "extension/dashboard/dashboard-react.html",
+      "extension/assets/*",
+      "extension/storage/*"
+    ],
+    "matches": ["<all_urls>"]
+  }
+]
+```
+
+Allows web pages to access listed resources. Required for:
+- Dashboard to load as an extension page (not a content script)
+- Icons and assets to be accessible to the popup
+- Necessary because MV3 requires explicit resource allowlisting
+
+### Content Security Policy (CSP)
+
+```json
+"content_security_policy": {
+  "extension_pages": "script-src 'self'; object-src 'self'"
+}
+```
+
+Prevents inline scripts and external script CDNs:
+- `script-src 'self'` — only scripts bundled with extension (no external CDN)
+- `object-src 'self'` — prevents plugin injection attacks
+
+---
+
+
 
 ```
 personal-data-privacy-manager/
