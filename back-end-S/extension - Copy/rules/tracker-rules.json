@@ -1,0 +1,142 @@
+{
+  "version": 1,
+  "trackers": [
+    {
+      "id": "google_analytics",
+      "name": "Google Analytics",
+      "category": "analytics",
+      "domain": "google-analytics.com",
+      "risk_level": "medium",
+      "signatures": [
+        "ga(",
+        "gtag(",
+        "_gaq.push",
+        "ga.create",
+        "GoogleAnalyticsObject"
+      ],
+      "cookies": ["_ga", "_gid", "_gat"],
+      "description": "Website analytics and user behavior tracking"
+    },
+    {
+      "id": "facebook_pixel",
+      "name": "Facebook Pixel",
+      "category": "advertising",
+      "domain": "facebook.com",
+      "risk_level": "high",
+      "signatures": [
+        "fbq(",
+        "FB.AppEvents",
+        "_facebook_tml"
+      ],
+      "cookies": ["_fbp", "fr"],
+      "description": "Facebook advertising conversion tracking and audience building"
+    },
+    {
+      "id": "twitter_pixel",
+      "name": "Twitter Conversion Tracking",
+      "category": "advertising",
+      "domain": "twitter.com",
+      "risk_level": "high",
+      "signatures": [
+        "twttr.conversion.trackPid",
+        "window.twq"
+      ],
+      "cookies": ["_twitter_sess"],
+      "description": "Twitter advertising and conversion tracking"
+    },
+    {
+      "id": "doubleclick",
+      "name": "Google DoubleClick",
+      "category": "advertising",
+      "domain": "doubleclick.net",
+      "risk_level": "high",
+      "signatures": [
+        "doubleclick.net/pagead",
+        "googlesyndication.com/pagead",
+        "googleadservices.com"
+      ],
+      "cookies": ["IDE", "ANID"],
+      "description": "Google advertising tracking and bid management"
+    },
+    {
+      "id": "amplitude",
+      "name": "Amplitude Analytics",
+      "category": "analytics",
+      "domain": "amplitude.com",
+      "risk_level": "medium",
+      "signatures": [
+        "amplitude.getInstance",
+        "amplitude.logEvent"
+      ],
+      "cookies": ["amplitude_id"],
+      "description": "Product analytics and user event tracking"
+    },
+    {
+      "id": "segment",
+      "name": "Segment Analytics",
+      "category": "analytics",
+      "domain": "segment.com",
+      "risk_level": "medium",
+      "signatures": [
+        "analytics.identify",
+        "analytics.track",
+        "analytics.page"
+      ],
+      "cookies": ["ajs_anonymous_id"],
+      "description": "Customer data platform and analytics aggregation"
+    },
+    {
+      "id": "hotjar",
+      "name": "Hotjar",
+      "category": "analytics",
+      "domain": "hotjar.com",
+      "risk_level": "high",
+      "signatures": [
+        "hj(",
+        "hj.q",
+        "hotjar.com/static/app"
+      ],
+      "cookies": ["_hjid", "_hjUserAttributesHash"],
+      "description": "Session recording and heatmap analytics"
+    },
+    {
+      "id": "linkedin_pixel",
+      "name": "LinkedIn Insight Tag",
+      "category": "advertising",
+      "domain": "linkedin.com",
+      "risk_level": "medium",
+      "signatures": [
+        "_linkedin_data_partner_id",
+        "li_fat_id"
+      ],
+      "cookies": ["li_fat_id"],
+      "description": "LinkedIn advertising and conversion tracking"
+    },
+    {
+      "id": "microsoft_clarity",
+      "name": "Microsoft Clarity",
+      "category": "analytics",
+      "domain": "clarity.ms",
+      "risk_level": "high",
+      "signatures": [
+        "clarity.site",
+        "clarity.event"
+      ],
+      "cookies": ["_clck", "_clsk"],
+      "description": "Session recording and heatmap analytics"
+    },
+    {
+      "id": "adwords_conversion",
+      "name": "Google Ads Conversion",
+      "category": "advertising",
+      "domain": "google.com",
+      "risk_level": "medium",
+      "signatures": [
+        "gtag('config', 'AW-",
+        "goog_report_conversion"
+      ],
+      "cookies": ["_gac_"],
+      "description": "Google Ads conversion tracking"
+    }
+  ]
+}
