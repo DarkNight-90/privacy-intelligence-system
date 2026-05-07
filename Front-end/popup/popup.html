@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Privacy Manager</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <div class="popup-container">
+      <header class="popup-header">
+        <h1>🛡️ Privacy Manager</h1>
+      </header>
+
+      <section class="popup-stats">
+        <div class="stat">
+          <span class="stat-value" id="popup-trackers">—</span>
+          <span class="stat-label">Trackers</span>
+        </div>
+        <div class="stat">
+          <span class="stat-value" id="popup-cookies">—</span>
+          <span class="stat-label">Cookies</span>
+        </div>
+        <div class="stat">
+          <span class="stat-value" id="popup-score">—</span>
+          <span class="stat-label">Score</span>
+        </div>
+      </section>
+
+      <section class="popup-actions">
+        <button id="open-dashboard" class="action-button primary">📊 Dashboard</button>
+        <button id="open-dashboard-react" class="action-button secondary">⚛️ React Dashboard</button>
+        <button id="run-check" class="action-button">🔍 Check Page</button>
+        <button id="clean-cookies" class="action-button">🍪 Clean Cookies</button>
+      </section>
+
+      <div id="popup-status" class="popup-status" style="display:none;"></div>
+
+      <footer class="popup-footer">
+        <a href="#">Settings</a>
+        <a href="#">Help</a>
+      </footer>
+    </div>
+
+    <script src="popup.js"></script>
+  </body>
+</html>
